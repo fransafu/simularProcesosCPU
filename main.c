@@ -42,10 +42,32 @@ struct Process create_process(int id, char *name) {
   return p;
 }
 
+void show_process(struct Process p) {
+  printf("pid: %d\nnombre: %s\nestado: %d\n", p.id, p.name, p.state);
+}
+
 int main(void)
 {
-  struct Process p = create_process(1, "foo");
+  struct Process processes[4096];
+  int process_count;
 
-  printf("pid: %d\nnombre: %s\nestado: %d\n", p.id, p.name, p.state);
-  return (0);
+  printf("Indique la cantidad de procesos: ");
+  scanf("%d", &process_count);
+
+  printf("%d\n", process_count);
+
+  for (int i = 0; i < process_count; i++) {
+    char name[1024];
+
+    printf("Ingrese nombre proceso %d: ", i);
+    scanf("%s", name);
+
+    processes[i] = create_process(i, name);
+  }
+
+  printf("procesos\n");
+
+  for (int i = 0; i < process_count; i++) {
+    show_process(processes[i]);
+  }
 }

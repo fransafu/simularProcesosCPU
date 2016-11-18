@@ -105,10 +105,22 @@ void get_data(struct Process *p){
   printf ("Ingrese tiempo3 CPU2:\n");scanf ("%d",p->times[2]);
 }
 
-bool empty_CPU(struct Process p){
+bool empty_cpu(struct Process p){
   if (p.state == CPU1 || p.state == CPU2){
     return false;
   }
+}
+
+void load_process_cpu(){
+  return 0;
+}
+
+void clock_cpu(){
+  return 0;
+}
+
+void clock_IO(){
+  return 0;
 }
 
 // -- HERE
@@ -144,7 +156,7 @@ int main(void)
   }
 
   for (int i = 0; 9 < process_count; i++){
-    if (empty_CPU(processes[i])){
+    if (empty_cpu(processes[i])){
       printf("Hace falta un proceso en la CPU\n");
     }
   }

@@ -59,6 +59,15 @@ int front(Queue *Q){
   return Q->elements[Q->front];
 }
 
+bool isEmpty(Queue *Q){
+  if(Q->size == 0){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
 void EnQueue(Queue *Q, int element){
   if (Q->size == Q->capacity){
     printf("Ready Queue is full\n");
@@ -133,21 +142,25 @@ void show_process(struct Process p) {
 
   
 
-void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue) {
+void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU) {
   time_t now = time(NULL);
 
   switch(p->state) {
   case Queue1:
-    // El proceso entra a la cpu por primera vez
-    DeQueue(ReadyQueue); // Sacamos el proceso de la lista de espera
-    p->times[0].initial = now;
-    p->state = CPU1;
+    if (isEmpty(CPU) && p->id == front(ReadyQueue)){
+      // El proceso entra a la cpu por primera vez
+      DeQueue(ReadyQueue); // Sacamos el proceso de la lista de espera
+      EnQueue(CPU, p->id);
+      p->times[0].initial = now;
+      p->state = CPU1;
+    }
     break;
 
   case CPU1:
     // Ya se acabo el tiempo de ejecucion del proceso
     if (difftime(now, p->times[0].initial) >= p->times[0].max_time) {
       // muevo el proceso a io
+      DeQueue(CPU);
       EnQueue(IOQueue, p->id);
       p->state = IO;
       p->times[0].final = now;
@@ -204,6 +217,7 @@ int main(void)
 
   Queue *ReadyQueue = createQueue(process_count + 2);
   Queue *IOQueue = createQueue(process_count + 2);
+  Queue *CPU = createQueue(1);
 
   for (int i = 0; i < process_count; i++) {
     char name[1024];
@@ -224,7 +238,8 @@ int main(void)
 
   for (;;){
     for (int i = 0; i < process_count; i++) {
-      next_state(&(processes[i]), ReadyQueue, IOQueue);
+      //next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
+      printf("Front element is %d\n",front(ReadyQueue));
     }
   }
 

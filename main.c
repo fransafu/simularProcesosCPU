@@ -149,10 +149,10 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
   case Queue1:
     if (isEmpty(CPU) && p->id == front(ReadyQueue)){
       // El proceso entra a la cpu por primera vez
-      DeQueue(ReadyQueue); // Sacamos el proceso de la lista de espera
       EnQueue(CPU, p->id);
       p->times[0].initial = now;
       p->state = CPU1;
+      DeQueue(ReadyQueue); // Sacamos el proceso de la lista de espera
     }
     break;
 
@@ -160,13 +160,13 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
     // Ya se acabo el tiempo de ejecucion del proceso
     if (difftime(now, p->times[0].initial) >= p->times[0].max_time) {
       // muevo el proceso a io
-      DeQueue(CPU);
       EnQueue(IOQueue, p->id);
       p->state = IO;
       p->times[0].final = now;
 
       // Momento en que ingreso a IO
       p->times[1].initial = now;
+      DeQueue(CPU);
     }
     break;
 
@@ -176,14 +176,18 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
       EnQueue(ReadyQueue,p->id); // Ingresamos proceso a cola
       p->state = Queue2;
       p->times[1].final = now;
+      DeQueue(IOQueue);
     }
     break;
 
   case Queue2:
-    // Tiempo en que entro a la cpu por segunda vez
-    DeQueue(ReadyQueue);
-    p->times[2].initial = now;
-    p->state = CPU2;
+    if (isEmpty(CPU) && p->id == front(ReadyQueue)){
+      // Tiempo en que entro a la cpu por segunda vez
+      EnQueue(CPU, p->id);
+      p->times[2].initial = now;
+      p->state = CPU2;
+      DeQueue(ReadyQueue);
+    }
     break;
 
   case CPU2:

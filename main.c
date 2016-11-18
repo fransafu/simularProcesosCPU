@@ -298,6 +298,7 @@ int main(void)
       next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
       show_progress(&(processes[i]));
     }
+    printf("\n");
   }
 
 

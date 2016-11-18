@@ -1,6 +1,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 struct MeasuredTime {
   time_t initial;
@@ -89,6 +90,30 @@ void next_state(struct Process *p) {
   }
 }
 
+// -- HERE
+/*
+void get_data(struct Process p){
+  printf ("Ingrese tiempo1 CPU1:\n");scanf  ("%d",p.times[0]);
+  printf ("Ingrese tiempo2 I/O:\n");scanf  ("%d",p.times[1]);
+  printf ("Ingrese tiempo3 CPU2:\n");scanf  ("%d",p.times[2]);
+
+  return p;
+}*/
+
+void get_data(struct Process *p){
+  printf ("Ingrese tiempo1 CPU1:\n");scanf ("%d",p->times[0]);
+  printf ("Ingrese tiempo2 I/O:\n");scanf ("%d",p->times[1]);
+  printf ("Ingrese tiempo3 CPU2:\n");scanf ("%d",p->times[2]);
+}
+
+bool empty_CPU(struct Process p){
+  if (p.state == CPU1 || p.state == CPU2){
+    return false;
+  }
+}
+
+// -- HERE
+
 int main(void)
 {
   struct Process processes[4096];
@@ -115,6 +140,13 @@ int main(void)
   printf("procesos\n");
 
   for (int i = 0; i < process_count; i++) {
+    get_data(&processes[i]);
     show_process(processes[i]);
+  }
+
+  for (int i = 0; 9 < process_count; i++){
+    if (empty_CPU(processes[i])){
+      printf("Hace falta un proceso en la CPU\n");
+    }
   }
 }

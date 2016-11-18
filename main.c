@@ -54,6 +54,8 @@ void show_process(struct Process p) {
 }
 
 void next_state(struct Process *p) {
+  time_t now = time(NULL);
+
   switch(p->state) {
   case ReadyQueue1:
     // El proceso entra a la cpu por primera vez
@@ -63,10 +65,8 @@ void next_state(struct Process *p) {
     break;
 
   case CPU1:
-    time_t now = time(NULL);
-
     // Ya se acabo el tiempo de ejecucion del proceso
-    if (difftime(now, p->times[0].initial) >= p.max_time) {
+    if (difftime(now, p->times[0].initial) >= p->max_time) {
       // muevo el proceso a io
       p->state = IO;
       p->times[0].final = now;
@@ -77,8 +77,7 @@ void next_state(struct Process *p) {
     break;
 
   case IO:
-    time_t now = time(NULL);
-    if (difftime(now, p->times[1].initial) >= p.max_time) {
+    if (difftime(now, p->times[1].initial) >= p->max_time) {
       // muevo el proceso a la cola por segunda vez
       p->state = ReadyQueue2;
       p->times[1].final = now;
@@ -140,7 +139,7 @@ int main(void)
   printf("procesos\n");
 
   for (int i = 0; i < process_count; i++) {
-    get_data(&processes[i]);
+    get_data(&(processes[i]));
     show_process(processes[i]);
   }
 

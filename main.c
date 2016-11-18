@@ -7,7 +7,7 @@
 // --- HERE
 
 /*
-EnQueue(Q,1);
+  EnQueue(Q,1);
   EnQueue(Q,2);
   EnQueue(Q,3);
   EnQueue(Q,4);
@@ -140,7 +140,7 @@ void show_process(struct Process p) {
   }
 }
 
-  
+
 
 void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU) {
   time_t now = time(NULL);
@@ -194,6 +194,8 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
     if (difftime(now, p->times[2].initial) >= p->times[2].max_time) {
       p->times[2].final = now;
       p->state = Done;
+      printf("sacando %s de la cpu\n", p->name);
+      DeQueue(CPU);
     }
     break;
 
@@ -204,9 +206,59 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
 }
 
 void get_data(struct Process *p){
-  printf ("Ingrese tiempo1 CPU1:\n");scanf ("%d",&(p->times[0].max_time));
-  printf ("Ingrese tiempo2 I/O:\n");scanf ("%d",&(p->times[1].max_time));
-  printf ("Ingrese tiempo3 CPU2:\n");scanf ("%d",&(p->times[2].max_time));
+  printf ("Ingrese tiempo1 CPU1:\n");
+  scanf ("%d",&(p->times[0].max_time));
+
+  printf ("Ingrese tiempo2 I/O:\n");
+  scanf ("%d",&(p->times[1].max_time));
+
+  printf ("Ingrese tiempo3 CPU2:\n");
+  scanf ("%d",&(p->times[2].max_time));
+}
+
+void show_progress(struct Process *p) {
+  int elapsed_time;
+
+  switch(p->state) {
+  case Queue1:
+    break;
+  case Queue2:
+    printf("%d : %s > En espera\n", p->id, p->name);
+    break;
+
+  case CPU1:
+    elapsed_time = difftime(time(NULL), p->times[0].initial);
+    printf("%d : %s > En CPU (1) > Tiempo Ejecucion: %d\n",
+	   p->id,
+	   p->name,
+	   elapsed_time);
+    break;
+
+  case CPU2:
+    elapsed_time = difftime(time(NULL), p->times[2].initial);
+    printf("%d : %s > En CPU (2) > Tiempo Ejecucion: %d\n",
+	   p->id,
+	   p->name,
+	   elapsed_time);
+    break;
+
+  case IO:
+    elapsed_time = difftime(time(NULL), p->times[1].initial);
+    printf("%d : %s > En IO > Tiempo Ejecucion: %d\n",
+	   p->id,
+	   p->name,
+	   elapsed_time);
+    break;
+
+  case Done:
+    printf("%d : %s > Terminado\n", p->id, p->name);
+    break;
+
+  default:
+    fprintf(stderr, "Estado invalido: %d", p->state);
+    break;
+  }
+
 }
 
 int main(void)
@@ -230,9 +282,8 @@ int main(void)
     scanf("%s", name);
 
     processes[i] = create_process(i, name);
+    memset(name, '\0', 1024);
   }
-
-  printf("procesos\n");
 
   for (int i = 0; i < process_count; i++) {
     get_data(&(processes[i]));
@@ -240,13 +291,14 @@ int main(void)
     show_process(processes[i]);
   }
 
-  for (;;){
+  for (;;) {
+    int done = 1;
+
     for (int i = 0; i < process_count; i++) {
-      //next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
-      printf("Front element is %d\n",front(ReadyQueue));
+      next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
+      show_progress(&(processes[i]));
     }
   }
-
 
 
   return 0;

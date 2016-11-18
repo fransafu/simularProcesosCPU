@@ -1,25 +1,30 @@
 #include <stdio.h>
 #include <string.h>
 
-enum CpuState {
-  ReadyQueue1,
-  CPU1,
-  IO,
-  ReadyQueue2,
-  CPU2,
-  Done,
-};
+struct MeasuredTime {
+  time_t inicial;
+  time_t final;
+}
+
+  enum CpuState {
+    ReadyQueue1,
+    CPU1,
+    IO,
+    ReadyQueue2,
+    CPU2,
+    Done,
+  };
 
 struct Process {
-    int process_id;
-    char nombre[100];
-    int estado;
-    int tiempo[3];
+  int id;
+  char nombre[100];
+  int estado;
+  struct MeasuredTime[3];
 };
 
 struct Process create_process(int id, char *name) {
   struct Process p;
-  p.process_id = id;
+  p.id = id;
   p.estado = ReadyQueue1;
   p.tiempo[0] = 0;
   p.tiempo[1] = 0;
@@ -33,6 +38,6 @@ int main(void)
 {
   struct Process p = create_process(1, "foo");
 
-  printf("pid: %d\nnombre: %s\nestado: %d\n", p.process_id, p.nombre, p.estado);
+  printf("pid: %d\nnombre: %s\nestado: %d\n", p.id, p.nombre, p.estado);
   return (0);
 }

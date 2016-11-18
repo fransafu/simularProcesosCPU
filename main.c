@@ -4,18 +4,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-// --- HERE
+#include <unistd.h>
 
-/*
-EnQueue(Q,1);
-  EnQueue(Q,2);
-  EnQueue(Q,3);
-  EnQueue(Q,4);
-  printf("Front element is %d\n",front(Q));
-  EnQueue(Q,5);
-  DeQueue(Q);
-  EnQueue(Q,6);
-  printf("Front element is %d\n",front(Q));*/
+#include <termios.h>
+#include <fcntl.h>
+
+// --- HERE
 
 typedef struct Queue{
   int capacity;
@@ -138,9 +132,7 @@ void show_process(struct Process p) {
   for (int i = 0; i < 3; i++) {
     printf("tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
   }
-}
-
-  
+} 
 
 void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU) {
   time_t now = time(NULL);
@@ -194,7 +186,12 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
     if (difftime(now, p->times[2].initial) >= p->times[2].max_time) {
       p->times[2].final = now;
       p->state = Done;
+      DeQueue(CPU);
     }
+    break;
+
+  case Done:
+    printf("Proceso %s terminado.\n", p->name);
     break;
 
   default:
@@ -207,6 +204,51 @@ void get_data(struct Process *p){
   printf ("Ingrese tiempo1 CPU1:\n");scanf ("%d",&(p->times[0].max_time));
   printf ("Ingrese tiempo2 I/O:\n");scanf ("%d",&(p->times[1].max_time));
   printf ("Ingrese tiempo3 CPU2:\n");scanf ("%d",&(p->times[2].max_time));
+}
+
+void show_queue(Queue *Q){
+  /*
+  printf("pid: %d\nnombre: %s\nestado: %d\nTiempo ejecucion: %d\n",
+   p.id,
+   p.name,
+   p.state,
+   p.times[0].max_time + p.times[1].max_time + p.times[2].max_time);
+
+  for (int i = 0; i < 3; i++) {
+    printf("tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
+  }*/
+
+  for ( int i = 0; i < Q->size; i++ ) {
+    printf( "%d ", Q->elements[ i ] );
+  }
+
+}
+
+int kbhit(void)
+{
+  struct termios oldt, newt;
+  int ch;
+  int oldf;
+ 
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+ 
+  ch = getchar();
+ 
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  fcntl(STDIN_FILENO, F_SETFL, oldf);
+ 
+  if(ch != EOF)
+  {
+    ungetc(ch, stdin);
+    return 1;
+  }
+ 
+  return 0;
 }
 
 int main(void)
@@ -231,24 +273,51 @@ int main(void)
 
     processes[i] = create_process(i, name);
   }
-
+  printf("\n");
   printf("procesos\n");
 
   for (int i = 0; i < process_count; i++) {
     get_data(&(processes[i]));
     EnQueue(ReadyQueue,processes[i].id);
-    show_process(processes[i]);
   }
+  printf("\n");
 
-  for (;;){
+  for(;;){
     for (int i = 0; i < process_count; i++) {
+      //show_process(processes[i]);
+      printf("TIME ACTUAL: %lld\n", (long long) time(NULL));
       next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
-      //printf("Front element is %d\n",front(ReadyQueue));
+      show_process(processes[i]);
+
+      /*
+      printf("Show Ready Queue\n");
+      if (!isEmpty(ReadyQueue)){
+        show_queue(ReadyQueue);
+      } else {
+        printf("Ready Queue vacia\n");
+      }
+
+      printf("\n");
+
+      printf("Show CPU\n");
+      if (!isEmpty(CPU)){
+        show_queue(CPU);
+      } else {
+        printf("Ready Queue vacia\n");
+      }
+      
+      printf("\n");
+
+      printf("Show I/O Queue\n");
+      if (!isEmpty(IOQueue)){
+        show_queue(IOQueue);
+      } else {
+        printf("I/O Queue vacia\n");
+      }*/
     }
+    sleep( 1 );
     printf("\n");
   }
-
-
 
   return 0;
 }

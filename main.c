@@ -60,7 +60,7 @@ void next_state(struct Process *p) {
   case ReadyQueue1:
     // El proceso entra a la cpu por primera vez
     // Veo que hora es
-    p->times[0].initial = time(NULL);
+    p->times[0].initial = now;
     p->state = CPU1;
     break;
 
@@ -81,10 +81,22 @@ void next_state(struct Process *p) {
       // muevo el proceso a la cola por segunda vez
       p->state = ReadyQueue2;
       p->times[1].final = now;
-
-      // Momento en que ingreso a la cola por segunda vez
-      p->times[2].initial = now;
     }
+    break;
+
+  case ReadyQueue2:
+    // Tiempo en que entro a la cpu por segunda vez
+    p->times[2].initial = now;
+    p->state = CPU2;
+    break;
+
+  case CPU2:
+    p->times[2].final = now;
+    p->state = Done;
+    break;
+
+  default:
+    fprintf(stderr, "Estado invalido: %d", p->state);
     break;
   }
 }

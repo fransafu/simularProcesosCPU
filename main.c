@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 struct MeasuredTime {
+  int max_time;
   time_t initial;
   time_t final;
 };
@@ -21,12 +22,12 @@ struct Process {
   int id;
   char name[100];
   int state;
-  int max_time;
   struct MeasuredTime times[3];
 };
 
 struct MeasuredTime create_measured_time() {
   struct MeasuredTime mt;
+  mt.max_time = 0;
   mt.initial = 0;
   mt.final = 0;
   return mt;
@@ -36,7 +37,6 @@ struct Process create_process(int id, char *name, int max_time) {
   struct Process p;
   p.id = id;
   p.state = ReadyQueue1;
-  p.max_time = max_time;
   p.times[0] = create_measured_time();
   p.times[1] = create_measured_time();
   p.times[2] = create_measured_time();
@@ -50,7 +50,11 @@ void show_process(struct Process p) {
 	 p.id,
 	 p.name,
 	 p.state,
-	 p.max_time);
+	 p.times[0].max_time + p.times[1].max_time + p.times[2].max_time);
+
+  for (int i = 0; i < 3; i++) {
+    printf("tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
+  }
 }
 
 void next_state(struct Process *p) {
@@ -65,7 +69,7 @@ void next_state(struct Process *p) {
 
   case CPU1:
     // Ya se acabo el tiempo de ejecucion del proceso
-    if (difftime(now, p->times[0].initial) >= p->max_time) {
+    if (difftime(now, p->times[0].initial) >= p->times[0].max_time) {
       // muevo el proceso a io
       p->state = IO;
       p->times[0].final = now;
@@ -76,7 +80,7 @@ void next_state(struct Process *p) {
     break;
 
   case IO:
-    if (difftime(now, p->times[1].initial) >= p->max_time) {
+    if (difftime(now, p->times[1].initial) >= p->times[1].max_time) {
       // muevo el proceso a la cola por segunda vez
       p->state = ReadyQueue2;
       p->times[1].final = now;
@@ -90,8 +94,10 @@ void next_state(struct Process *p) {
     break;
 
   case CPU2:
-    p->times[2].final = now;
-    p->state = Done;
+    if (difftime(now, p->times[2].initial) >= p->times[2].max_time) {
+      p->times[2].final = now;
+      p->state = Done;
+    }
     break;
 
   default:
@@ -100,6 +106,16 @@ void next_state(struct Process *p) {
   }
 }
 
+void get_data(struct Process *p){
+  printf ("Ingrese tiempo1 CPU1:\n");
+  scanf ("%d",&(p->times[0].max_time));
+
+  printf ("Ingrese tiempo2 I/O:\n");
+  scanf ("%d",&(p->times[1].max_time));
+
+  printf ("Ingrese tiempo3 CPU2:\n");
+  scanf ("%d",&(p->times[2].max_time));
+}
 int main(void)
 {
   struct Process processes[4096];
@@ -130,9 +146,9 @@ int main(void)
     show_process(processes[i]);
   }
 
-  for (int i = 0; 9 < process_count; i++){
-    if (empty_cpu(processes[i])){
-      printf("Hace falta un proceso en la CPU\n");
-    }
-  }
+  /* for (int i = 0; 9 < process_count; i++){ */
+  /*   if (empty_cpu(processes[i])){ */
+  /*     printf("Hace falta un proceso en la CPU\n"); */
+  /*   } */
+  /* } */
 }

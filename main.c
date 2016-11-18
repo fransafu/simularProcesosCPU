@@ -128,7 +128,7 @@ typedef struct ReadyQueue{
   int *elements;
 }ReadyQueue;
 
-ReadyQueue * createQueue(int maxElements){
+ReadyQueue * createReadyQueue(int maxElements){
   ReadyQueue *Q;
   Q = (ReadyQueue *)malloc(sizeof(ReadyQueue));
   Q->elements = (int *)malloc(sizeof(int)*maxElements);
@@ -140,7 +140,7 @@ ReadyQueue * createQueue(int maxElements){
   return Q;
 }
 
-void Dequeue(ReadyQueue *Q){
+void DeReadyQueue(ReadyQueue *Q){
   if (Q->size == 0){
     printf("Ready Queue is empty\n");
     return;
@@ -182,16 +182,16 @@ void EnReadyQueue(ReadyQueue *Q, int element){
 
 int main(void)
 {
-  ReadyQueue *Q = createQueue(5);
-        EnReadyQueue(Q,1);
-        EnReadyQueue(Q,2);
-        EnReadyQueue(Q,3);
-        EnReadyQueue(Q,4);
-        printf("Front element is %d\n",front(Q));
-        EnReadyQueue(Q,5);
-        Dequeue(Q);
-        EnReadyQueue(Q,6);
-        printf("Front element is %d\n",front(Q));
+  ReadyQueue *Q = createReadyQueue(5);
+  EnReadyQueue(Q,1);
+  EnReadyQueue(Q,2);
+  EnReadyQueue(Q,3);
+  EnReadyQueue(Q,4);
+  printf("Front element is %d\n",front(Q));
+  EnReadyQueue(Q,5);
+  DeReadyQueue(Q);
+  EnReadyQueue(Q,6);
+  printf("Front element is %d\n",front(Q));
     /*
   struct Process processes[4096];
   int process_count;

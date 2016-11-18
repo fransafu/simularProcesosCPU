@@ -59,7 +59,6 @@ void next_state(struct Process *p) {
   switch(p->state) {
   case ReadyQueue1:
     // El proceso entra a la cpu por primera vez
-    // Veo que hora es
     p->times[0].initial = now;
     p->state = CPU1;
     break;
@@ -100,42 +99,6 @@ void next_state(struct Process *p) {
     break;
   }
 }
-
-// -- HERE
-/*
-void get_data(struct Process p){
-  printf ("Ingrese tiempo1 CPU1:\n");scanf  ("%d",p.times[0]);
-  printf ("Ingrese tiempo2 I/O:\n");scanf  ("%d",p.times[1]);
-  printf ("Ingrese tiempo3 CPU2:\n");scanf  ("%d",p.times[2]);
-
-  return p;
-}*/
-
-void get_data(struct Process *p){
-  printf ("Ingrese tiempo1 CPU1:\n");scanf ("%d",p->times[0]);
-  printf ("Ingrese tiempo2 I/O:\n");scanf ("%d",p->times[1]);
-  printf ("Ingrese tiempo3 CPU2:\n");scanf ("%d",p->times[2]);
-}
-
-bool empty_cpu(struct Process p){
-  if (p.state == CPU1 || p.state == CPU2){
-    return false;
-  }
-}
-
-void load_process_cpu(){
-  return 0;
-}
-
-void clock_cpu(){
-  return 0;
-}
-
-void clock_IO(){
-  return 0;
-}
-
-// -- HERE
 
 int main(void)
 {

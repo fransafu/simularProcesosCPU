@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-
-#include "queue.h"
+#include <stdlib.h>
 
 struct MeasuredTime {
   int max_time;
@@ -119,8 +118,81 @@ void get_data(struct Process *p){
   scanf ("%d",&(p->times[2].max_time));
 }
 
+// --- HERE
+
+typedef struct ReadyQueue{
+  int capacity;
+  int size;
+  int front;
+  int rear;
+  int *elements;
+}ReadyQueue;
+
+ReadyQueue * createQueue(int maxElements){
+  ReadyQueue *Q;
+  Q = (ReadyQueue *)malloc(sizeof(ReadyQueue));
+  Q->elements = (int *)malloc(sizeof(int)*maxElements);
+  Q->size = 0;
+  Q->capacity = maxElements;
+  Q->front = 0;
+  Q->rear = -1;
+
+  return Q;
+}
+
+void Dequeue(ReadyQueue *Q){
+  if (Q->size == 0){
+    printf("Ready Queue is empty\n");
+    return;
+  } else {
+    Q->size--;
+    Q->front++;
+    if (Q->front == Q->capacity){
+      Q->front = 0;
+    }
+  }
+  return;
+}
+
+int front(ReadyQueue *Q){
+  if(Q->size == 0){
+    printf("Ready Queue is empty\n");
+    exit(0);
+  }
+  return Q->elements[Q->front];
+}
+
+void EnReadyQueue(ReadyQueue *Q, int element){
+  if (Q->size == Q->capacity){
+    printf("Ready Queue is full\n");
+  } else {
+    Q->size++;
+    Q->rear = Q->rear + 1;
+
+    if(Q->rear == Q->capacity){
+      Q->rear = 0;
+    }
+
+    Q->elements[Q->rear] = element;
+  }
+  return;
+}
+
+// --- HERE
+
 int main(void)
 {
+  ReadyQueue *Q = createQueue(5);
+        EnReadyQueue(Q,1);
+        EnReadyQueue(Q,2);
+        EnReadyQueue(Q,3);
+        EnReadyQueue(Q,4);
+        printf("Front element is %d\n",front(Q));
+        EnReadyQueue(Q,5);
+        Dequeue(Q);
+        EnReadyQueue(Q,6);
+        printf("Front element is %d\n",front(Q));
+    /*
   struct Process processes[4096];
   int process_count;
 
@@ -144,4 +216,13 @@ int main(void)
     get_data(&(processes[i]));
     show_process(processes[i]);
   }
+
+  for (;;){
+      for (int i = 0; i < process_count; i++) {
+      get_data(&(processes[i]));
+      show_process(processes[i]);
+    }
+  }
+  */
+  return 0;
 }

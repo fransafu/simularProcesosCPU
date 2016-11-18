@@ -242,9 +242,10 @@ int main(void)
 
   for (;;){
     for (int i = 0; i < process_count; i++) {
-      //next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
-      printf("Front element is %d\n",front(ReadyQueue));
+      next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
+      //printf("Front element is %d\n",front(ReadyQueue));
     }
+    printf("\n");
   }
 
 

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "queue.h"
+
 struct MeasuredTime {
   int max_time;
   time_t initial;
@@ -33,7 +35,7 @@ struct MeasuredTime create_measured_time() {
   return mt;
 }
 
-struct Process create_process(int id, char *name, int max_time) {
+struct Process create_process(int id, char *name) {
   struct Process p;
   p.id = id;
   p.state = ReadyQueue1;
@@ -116,6 +118,7 @@ void get_data(struct Process *p){
   printf ("Ingrese tiempo3 CPU2:\n");
   scanf ("%d",&(p->times[2].max_time));
 }
+
 int main(void)
 {
   struct Process processes[4096];
@@ -127,16 +130,12 @@ int main(void)
   printf("%d\n", process_count);
 
   for (int i = 0; i < process_count; i++) {
-    int max_time;
     char name[1024];
 
     printf("Ingrese nombre proceso %d: ", i);
     scanf("%s", name);
 
-    printf("Ingrese el tiempo de ejecucion: ");
-    scanf("%d", &max_time);
-
-    processes[i] = create_process(i, name, max_time);
+    processes[i] = create_process(i, name);
   }
 
   printf("procesos\n");
@@ -145,10 +144,4 @@ int main(void)
     get_data(&(processes[i]));
     show_process(processes[i]);
   }
-
-  /* for (int i = 0; 9 < process_count; i++){ */
-  /*   if (empty_cpu(processes[i])){ */
-  /*     printf("Hace falta un proceso en la CPU\n"); */
-  /*   } */
-  /* } */
 }

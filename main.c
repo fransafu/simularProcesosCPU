@@ -7,27 +7,27 @@
 // --- HERE
 
 /*
-EnReadyQueue(Q,1);
-  EnReadyQueue(Q,2);
-  EnReadyQueue(Q,3);
-  EnReadyQueue(Q,4);
+EnQueue(Q,1);
+  EnQueue(Q,2);
+  EnQueue(Q,3);
+  EnQueue(Q,4);
   printf("Front element is %d\n",front(Q));
-  EnReadyQueue(Q,5);
-  DeReadyQueue(Q);
-  EnReadyQueue(Q,6);
+  EnQueue(Q,5);
+  DeQueue(Q);
+  EnQueue(Q,6);
   printf("Front element is %d\n",front(Q));*/
 
-typedef struct ReadyQueue{
+typedef struct Queue{
   int capacity;
   int size;
   int front;
   int rear;
   int *elements;
-}ReadyQueue;
+}Queue;
 
-ReadyQueue * createReadyQueue(int maxElements){
-  ReadyQueue *Q;
-  Q = (ReadyQueue *)malloc(sizeof(ReadyQueue));
+Queue * createQueue(int maxElements){
+  Queue *Q;
+  Q = (Queue *)malloc(sizeof(Queue));
   Q->elements = (int *)malloc(sizeof(int)*maxElements);
   Q->size = 0;
   Q->capacity = maxElements;
@@ -37,7 +37,7 @@ ReadyQueue * createReadyQueue(int maxElements){
   return Q;
 }
 
-void DeReadyQueue(ReadyQueue *Q){
+void DeQueue(Queue *Q){
   if (Q->size == 0){
     printf("Ready Queue is empty\n");
     return;
@@ -51,7 +51,7 @@ void DeReadyQueue(ReadyQueue *Q){
   return;
 }
 
-int front(ReadyQueue *Q){
+int front(Queue *Q){
   if(Q->size == 0){
     printf("Ready Queue is empty\n");
     exit(0);
@@ -59,7 +59,7 @@ int front(ReadyQueue *Q){
   return Q->elements[Q->front];
 }
 
-void EnReadyQueue(ReadyQueue *Q, int element){
+void EnQueue(Queue *Q, int element){
   if (Q->size == Q->capacity){
     printf("Ready Queue is full\n");
   } else {
@@ -84,10 +84,10 @@ struct MeasuredTime {
 };
 
 enum CpuState {
-  ReadyQueue1,
+  Queue1,
   CPU1,
   IO,
-  ReadyQueue2,
+  Queue2,
   CPU2,
   Done,
 };
@@ -110,7 +110,7 @@ struct MeasuredTime create_measured_time() {
 struct Process create_process(int id, char *name) {
   struct Process p;
   p.id = id;
-  p.state = ReadyQueue1;
+  p.state = Queue1;
   p.times[0] = create_measured_time();
   p.times[1] = create_measured_time();
   p.times[2] = create_measured_time();
@@ -133,13 +133,13 @@ void show_process(struct Process p) {
 
   
 
-void next_state(struct Process *p, ReadyQueue *Q) {
+void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue) {
   time_t now = time(NULL);
 
   switch(p->state) {
-  case ReadyQueue1:
+  case Queue1:
     // El proceso entra a la cpu por primera vez
-    DeReadyQueue(Q); // Sacamos el proceso de la lista de espera
+    DeQueue(ReadyQueue); // Sacamos el proceso de la lista de espera
     p->times[0].initial = now;
     p->state = CPU1;
     break;
@@ -148,6 +148,7 @@ void next_state(struct Process *p, ReadyQueue *Q) {
     // Ya se acabo el tiempo de ejecucion del proceso
     if (difftime(now, p->times[0].initial) >= p->times[0].max_time) {
       // muevo el proceso a io
+      EnQueue(IOQueue, p->id);
       p->state = IO;
       p->times[0].final = now;
 
@@ -159,15 +160,15 @@ void next_state(struct Process *p, ReadyQueue *Q) {
   case IO:
     if (difftime(now, p->times[1].initial) >= p->times[1].max_time) {
       // muevo el proceso a la cola por segunda vez
-      EnReadyQueue(Q,p->id); // Ingresamos proceso a cola
-      p->state = ReadyQueue2;
+      EnQueue(ReadyQueue,p->id); // Ingresamos proceso a cola
+      p->state = Queue2;
       p->times[1].final = now;
     }
     break;
 
-  case ReadyQueue2:
+  case Queue2:
     // Tiempo en que entro a la cpu por segunda vez
-    DeReadyQueue(Q);
+    DeQueue(ReadyQueue);
     p->times[2].initial = now;
     p->state = CPU2;
     break;
@@ -201,7 +202,8 @@ int main(void)
 
   printf("%d\n", process_count);
 
-  ReadyQueue *Q = createReadyQueue(process_count + 2);
+  Queue *ReadyQueue = createQueue(process_count + 2);
+  Queue *IOQueue = createQueue(process_count + 2);
 
   for (int i = 0; i < process_count; i++) {
     char name[1024];
@@ -216,9 +218,17 @@ int main(void)
 
   for (int i = 0; i < process_count; i++) {
     get_data(&(processes[i]));
-    EnReadyQueue(Q,processes[i].id);
+    EnQueue(ReadyQueue,processes[i].id);
     show_process(processes[i]);
   }
+
+  for (;;){
+    for (int i = 0; i < process_count; i++) {
+      next_state(&(processes[i]), ReadyQueue, IOQueue);
+    }
+  }
+
+
 
   return 0;
 }

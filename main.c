@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 
 // --- HERE
@@ -122,19 +123,19 @@ struct Process create_process(int id, char *name) {
   return p;
 }
 
-void show_process(struct Process p) {
-  printf("pid: %d\nnombre: %s\nestado: %d\nTiempo ejecucion: %d\n",
+void show_process(FILE *log, struct Process p) {
+  fprintf(log, "pid: %d\nnombre: %s\nestado: %d\nTiempo ejecucion: %d\n",
 	 p.id,
 	 p.name,
 	 p.state,
 	 p.times[0].max_time + p.times[1].max_time + p.times[2].max_time);
 
   for (int i = 0; i < 3; i++) {
-    printf("tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
+    fprintf(log, "tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
   }
 }
 
-void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU) {
+void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU, FILE *log) {
   time_t now = time(NULL);
 
   switch(p->state) {
@@ -191,11 +192,11 @@ void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU
     break;
 
   case Done:
-    printf("Proceso %s terminado.\n", p->name);
+    fprintf(log, "Proceso %s terminado.\n", p->name);
     break;
 
   default:
-    fprintf(stderr, "Estado invalido: %d", p->state);
+    fprintf(log, "Estado invalido: %d", p->state);
     break;
   }
 }
@@ -207,17 +208,6 @@ void get_data(struct Process *p){
 }
 
 void show_queue(Queue *Q){
-  /*
-  printf("pid: %d\nnombre: %s\nestado: %d\nTiempo ejecucion: %d\n",
-   p.id,
-   p.name,
-   p.state,
-   p.times[0].max_time + p.times[1].max_time + p.times[2].max_time);
-
-  for (int i = 0; i < 3; i++) {
-    printf("tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
-  }*/
-
   for ( int i = 0; i < Q->size; i++ ) {
     printf( "%d ", Q->elements[ i ] );
   }
@@ -258,74 +248,85 @@ struct thread_data {
   Queue *ReadyQueue;
   Queue *IOQueue;
   Queue *CPU;
+
+  FILE *log;
 };
 
 void *show_info(void *data) {
   struct thread_data *tdata = (struct thread_data *)data;
 
-  for(;;){
-    for (int i = 0; i < tdata->process_count; i++) {
-      printf("------ DENTRO DEL HILO CREADO --------------\n");
+  for(;;) {
+    sleep(1);
 
-      printf("TIME ACTUAL: %lld\n", (long long) time(NULL));
+    for (int i = 0; i < tdata->process_count; i++) {
+      fprintf(tdata->log, "------ DENTRO DEL HILO CREADO --------------\n");
+
+      fprintf(tdata->log, "TIME ACTUAL: %lld\n", (long long) time(NULL));
 
       next_state(&(tdata->processes[i]),
 		 tdata->ReadyQueue,
 		 tdata->IOQueue,
-		 tdata->CPU);
+		 tdata->CPU,
+		 tdata->log);
 
-      show_process(tdata->processes[i]);
+      show_process(tdata->log, tdata->processes[i]);
 
-      printf("--------------------\n");
+      fprintf(tdata->log, "--------------------\n");
     }
-    sleep( 1 );
-    printf("\n");
+
+    fprintf(tdata->log, "\n");
   }
 }
 
+FILE *create_terminal() {
+  char *name = tempnam(NULL, NULL);
+  char cmd[256];
+
+  mkfifo(name, 0777);
+  if(fork() == 0)
+    {
+      sprintf(cmd, "xterm -e cat %s", name);
+      system(cmd);
+      exit(0);
+    }
+  return fopen(name, "w");
+}
 
 int main(void)
 {
   struct Process processes[4096];
-  int process_count;
 
-  printf("Indique la cantidad de procesos: ");
-  scanf("%d", &process_count);
-
-  printf("%d\n", process_count);
-
-  Queue *ReadyQueue = createQueue(process_count + 2);
-  Queue *IOQueue = createQueue(process_count + 2);
+  Queue *ReadyQueue = createQueue(4096);
+  Queue *IOQueue = createQueue(4096);
   Queue *CPU = createQueue(1);
 
   pthread_t show_info_thread;
   struct thread_data tdata = {
     .processes = processes,
-    .process_count = process_count,
+    // Por defecto hay 0 procesos
+    .process_count = 0,
     .ReadyQueue = ReadyQueue,
     .IOQueue = IOQueue,
-    .CPU = CPU
+    .CPU = CPU,
+    .log = create_terminal()
   };
+  pthread_create(&show_info_thread, NULL, show_info, (void *)&tdata);
 
-  for (int i = 0; i < process_count; i++) {
+
+  for (;;) {
     char name[1024];
 
-    printf("Ingrese nombre proceso %d: ", i);
+    printf("Ingrese nombre proceso %d: ", tdata.process_count);
     scanf("%s", name);
 
-    processes[i] = create_process(i, name);
-  }
-  printf("\n");
-  printf("procesos\n");
+    processes[tdata.process_count] = create_process(tdata.process_count, name);
 
-  for (int i = 0; i < process_count; i++) {
-    get_data(&(processes[i]));
-    EnQueue(ReadyQueue,processes[i].id);
+    get_data(&(processes[tdata.process_count]));
+    EnQueue(ReadyQueue,processes[tdata.process_count].id);
+    tdata.process_count++;
   }
-  printf("\n");
 
-  pthread_create(&show_info_thread, NULL, show_info, (void *)&tdata);
-  pthread_join(show_info_thread, NULL);
+  // nunca se deberia llegar aqui.
 
   return 0;
 }

@@ -256,8 +256,6 @@ void *show_info(void *data) {
   struct thread_data *tdata = (struct thread_data *)data;
 
   for(;;) {
-    sleep(1);
-
     for (int i = 0; i < tdata->process_count; i++) {
       fprintf(tdata->log, "------ DENTRO DEL HILO CREADO --------------\n");
 
@@ -275,11 +273,15 @@ void *show_info(void *data) {
     }
 
     fprintf(tdata->log, "\n");
+
+    usleep(10000);
   }
+
+
 }
 
 FILE *create_terminal() {
-  char *name = tempnam(NULL, NULL);
+  char name[] = "sistemas-operativos-XXXXXX";
   char cmd[256];
 
   mkfifo(name, 0777);
@@ -296,18 +298,15 @@ int main(void)
 {
   struct Process processes[4096];
 
-  Queue *ReadyQueue = createQueue(4096);
-  Queue *IOQueue = createQueue(4096);
-  Queue *CPU = createQueue(1);
-
   pthread_t show_info_thread;
   struct thread_data tdata = {
+
     .processes = processes,
     // Por defecto hay 0 procesos
     .process_count = 0,
-    .ReadyQueue = ReadyQueue,
-    .IOQueue = IOQueue,
-    .CPU = CPU,
+    .ReadyQueue = createQueue(4096),
+    .IOQueue = createQueue(4096),
+    .CPU = createQueue(4096),
     .log = create_terminal()
   };
   pthread_create(&show_info_thread, NULL, show_info, (void *)&tdata);
@@ -322,7 +321,7 @@ int main(void)
     processes[tdata.process_count] = create_process(tdata.process_count, name);
 
     get_data(&(processes[tdata.process_count]));
-    EnQueue(ReadyQueue,processes[tdata.process_count].id);
+    EnQueue(tdata.ReadyQueue, tdata.processes[tdata.process_count].id);
     tdata.process_count++;
   }
 

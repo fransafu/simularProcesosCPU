@@ -3,11 +3,11 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
 #include <unistd.h>
-
 #include <termios.h>
+#include <pthread.h>
 #include <fcntl.h>
+
 
 // --- HERE
 
@@ -132,7 +132,7 @@ void show_process(struct Process p) {
   for (int i = 0; i < 3; i++) {
     printf("tiempo ejecucion %d: %d\n", i + 1, p.times[i].max_time);
   }
-} 
+}
 
 void next_state(struct Process *p, Queue *ReadyQueue, Queue *IOQueue, Queue *CPU) {
   time_t now = time(NULL);
@@ -229,27 +229,60 @@ int kbhit(void)
   struct termios oldt, newt;
   int ch;
   int oldf;
- 
+
   tcgetattr(STDIN_FILENO, &oldt);
   newt = oldt;
   newt.c_lflag &= ~(ICANON | ECHO);
   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
   oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
   fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
- 
+
   ch = getchar();
- 
+
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
   fcntl(STDIN_FILENO, F_SETFL, oldf);
- 
+
   if(ch != EOF)
   {
     ungetc(ch, stdin);
     return 1;
   }
- 
+
   return 0;
 }
+
+struct thread_data {
+  struct Process *processes;
+  int process_count;
+
+  Queue *ReadyQueue;
+  Queue *IOQueue;
+  Queue *CPU;
+};
+
+void *show_info(void *data) {
+  struct thread_data *tdata = (struct thread_data *)data;
+
+  for(;;){
+    for (int i = 0; i < tdata->process_count; i++) {
+      printf("------ DENTRO DEL HILO CREADO --------------\n");
+
+      printf("TIME ACTUAL: %lld\n", (long long) time(NULL));
+
+      next_state(&(tdata->processes[i]),
+		 tdata->ReadyQueue,
+		 tdata->IOQueue,
+		 tdata->CPU);
+
+      show_process(tdata->processes[i]);
+
+      printf("--------------------\n");
+    }
+    sleep( 1 );
+    printf("\n");
+  }
+}
+
 
 int main(void)
 {
@@ -264,6 +297,15 @@ int main(void)
   Queue *ReadyQueue = createQueue(process_count + 2);
   Queue *IOQueue = createQueue(process_count + 2);
   Queue *CPU = createQueue(1);
+
+  pthread_t show_info_thread;
+  struct thread_data tdata = {
+    .processes = processes,
+    .process_count = process_count,
+    .ReadyQueue = ReadyQueue,
+    .IOQueue = IOQueue,
+    .CPU = CPU
+  };
 
   for (int i = 0; i < process_count; i++) {
     char name[1024];
@@ -282,42 +324,8 @@ int main(void)
   }
   printf("\n");
 
-  for(;;){
-    for (int i = 0; i < process_count; i++) {
-      //show_process(processes[i]);
-      printf("TIME ACTUAL: %lld\n", (long long) time(NULL));
-      next_state(&(processes[i]), ReadyQueue, IOQueue, CPU);
-      show_process(processes[i]);
-
-      /*
-      printf("Show Ready Queue\n");
-      if (!isEmpty(ReadyQueue)){
-        show_queue(ReadyQueue);
-      } else {
-        printf("Ready Queue vacia\n");
-      }
-
-      printf("\n");
-
-      printf("Show CPU\n");
-      if (!isEmpty(CPU)){
-        show_queue(CPU);
-      } else {
-        printf("Ready Queue vacia\n");
-      }
-      
-      printf("\n");
-
-      printf("Show I/O Queue\n");
-      if (!isEmpty(IOQueue)){
-        show_queue(IOQueue);
-      } else {
-        printf("I/O Queue vacia\n");
-      }*/
-    }
-    sleep( 1 );
-    printf("\n");
-  }
+  pthread_create(&show_info_thread, NULL, show_info, (void *)&tdata);
+  pthread_join(show_info_thread, NULL);
 
   return 0;
 }
